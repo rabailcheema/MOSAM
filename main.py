@@ -73,6 +73,43 @@ def get_simple_advice(record):
 
     return " ".join(advice)
 
+def get_trend(df):
+    if len(df) < 2:
+        return "Not enough data yet."
+
+    last = df["temperature"].iloc[-1]
+    prev = df["temperature"].iloc[-2]
+
+    if last > prev:
+        return "Temperature rising"
+    elif last < prev:
+        return "Temperature dropping"
+    else:
+        return "Temperature stable"
+
+def comfort_insight(temp, humidity):
+    if temp > 35 and humidity > 70:
+        return "Oppressive heat. Expect fatigue."
+    elif 20 <= temp <= 28:
+        return "Comfortable conditions."
+    elif temp < 10:
+        return "Cold. Low energy likely."
+    return "Moderate conditions."
+
+def bio_insight(temp, humidity):
+    if humidity > 80:
+        return "High humidity may support microbial growth."
+    if temp > 35:
+        return "Heat increases dehydration stress."
+    return "No major biological stress."
+
+def energy_level(temp, humidity):
+    if temp > 32 and humidity > 70:
+        return "Low energy day."
+    if 20 <= temp <= 27:
+        return "High focus potential."
+    return "Moderate energy."
+
 # Fetch weather
 def fetch_weather(city, country):
     query = f"{city},{country}" if country else city
@@ -105,13 +142,28 @@ if st.button("Get Weather"):
         st.stop()
 
     record, error = fetch_weather(city, country)
+    
 
     if error:
         st.error(error)
         st.stop()
 
+    # --- MEMORY ---
+    if "history" not in st.session_state:
+      st.session_state["history"] = []
+
+    st.session_state["history"].append(record)
+    df_hist = pd.DataFrame(st.session_state["history"])
+    st.line_chart(df_hist["temperature"])
+
     # AI Advice
     advice = get_ai_advice(record)
+
+    # INSIGHTS 
+    trend = get_trend(df_hist)
+    comfort = comfort_insight(record["temperature"], record["humidity"])
+    bio = bio_insight(record["temperature"], record["humidity"])
+    energy = energy_level(record["temperature"], record["humidity"])
 
     # Display
     st.subheader(f"{record['city']}, {record['country']}")
@@ -125,7 +177,14 @@ if st.button("Get Weather"):
     st.write(f"**Wind Speed:** {record['wind_speed']} m/s")
 
     # Advice Box
-    st.markdown("### Suggestion")
+    st.markdown("### Insights")
+
+    st.write("Trend:", trend)
+    st.write("Comfort:", comfort)
+    st.write("Bio:", bio)
+    st.write("Energy:", energy)
+
+    st.markdown("### Advice")
     st.success(advice)
 
     # Save
