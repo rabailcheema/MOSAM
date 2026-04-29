@@ -73,19 +73,6 @@ def get_simple_advice(record):
 
     return " ".join(advice)
 
-def get_trend(df):
-    if len(df) < 2:
-        return "Not enough data yet."
-
-    last = df["temperature"].iloc[-1]
-    prev = df["temperature"].iloc[-2]
-
-    if last > prev:
-        return "Temperature rising"
-    elif last < prev:
-        return "Temperature dropping"
-    else:
-        return "Temperature stable"
 
 def comfort_insight(temp, humidity):
     if temp > 35 and humidity > 70:
@@ -148,19 +135,11 @@ if st.button("Get Weather"):
         st.error(error)
         st.stop()
 
-    # --- MEMORY ---
-    if "history" not in st.session_state:
-      st.session_state["history"] = []
-
-    st.session_state["history"].append(record)
-    df_hist = pd.DataFrame(st.session_state["history"])
-    st.line_chart(df_hist["temperature"])
-
     # AI Advice
     advice = get_ai_advice(record)
 
     # INSIGHTS 
-    trend = get_trend(df_hist)
+    
     comfort = comfort_insight(record["temperature"], record["humidity"])
     bio = bio_insight(record["temperature"], record["humidity"])
     energy = energy_level(record["temperature"], record["humidity"])
@@ -179,7 +158,6 @@ if st.button("Get Weather"):
     # Advice Box
     st.markdown("### Insights")
 
-    st.write("Trend:", trend)
     st.write("Comfort:", comfort)
     st.write("Bio:", bio)
     st.write("Energy:", energy)
